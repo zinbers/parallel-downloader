@@ -51,6 +51,7 @@ Execute script with arguments as follows.
 
 - url: URL of a remote file to be downloaded.
 - threads: Number of parallel threads.
+- savename: file name via download to be saved.
 
 For example:
 ```
