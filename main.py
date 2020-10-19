@@ -33,6 +33,7 @@ class Downloader:
         self.if_contains_crc32c = True if self.remote_crc32c != -1 or self.remote_crc32c is not None else False  # if remote file has a checksum
         self.downloaded_crc32c = None  # checksum of a downloaded file
         self.range_list = list()  # byte range for each download thread
+        self.range_chunk_size_list = list()
         self.start_time = None  # start time to calculate overall download time
         self.end_time = None  # end time to calculate overall download time
         self.target_filename = os.path.basename(self.url)  # name of a file to be downloaded
@@ -197,7 +198,10 @@ class Downloader:
 
                 req = urllib.request.Request(self.get_url())
                 req.headers['Range'] = 'bytes={}'.format(item.chunk_range)
+                req.headers['User-Agent']="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"
+
                 with urllib.request.urlopen(req) as response, open('temp/part' + str(item.chunk_id), self.append_write) as out_file:
+                    #print("id:{},length:{},content-renage:{}".format(item.chunk_id,response.headers['content-length'],response.headers['content-range']))
                     shutil.copyfileobj(response, out_file)
                 self.download_durations[item.chunk_id] = timeit.default_timer()
 
@@ -230,7 +234,8 @@ class Downloader:
         self.download_status.clear()
         for i in range(self.number_of_threads):
             if os.path.isfile("temp/part" + str(i)):
-                self.download_status.append(str(round(os.stat("temp/part" + str(i)).st_size/(self.file_size/self.number_of_threads) * 100, 2)) + "%")
+                #print("i:{},downloaded:{},chunk_size:{},res:{}".format(i,os.stat("temp/part" + str(i)).st_size,self.range_chunk_size_list[i],os.stat("temp/part" + str(i)).st_size/self.range_chunk_size_list[i]))
+                self.download_status.append(str(round(os.stat("temp/part" + str(i)).st_size/self.range_chunk_size_list[i] * 100, 2)) + "%")
             else:
                 self.download_status.append("0.00%")
         self.current_status = '\t\t'.join(self.download_status)
@@ -274,10 +279,13 @@ class Downloader:
         for _ in range(self.number_of_threads):
             if(i + chunk_size) < self.file_size:
                 entry = '%s-%s' % (i, i + chunk_size - 1)
+                self.range_chunk_size_list.append(chunk_size)
             else:
                 entry = '%s-%s' % (i, self.file_size)
+                self.range_chunk_size_list.append(self.file_size-i) # no need plus 1 cz index start with 0
             i += chunk_size
             self.range_list.append(entry)
+        #print(self.range_chunk_size_list,self.range_list)
 
     def get_target_filename(self):
         """Returns the target file name"""
@@ -293,7 +301,8 @@ class Downloader:
             "if_contains_crc32c": self.if_contains_crc32c,
             "remote_crc32c": self.remote_crc32c,
             "downloaded_crc32c": self.downloaded_crc32c,
-            "range_list": self.range_list
+            "range_list": self.range_list,
+            "chunk_size_list":self.range_chunk_size_list
         }
 
 
