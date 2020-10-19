@@ -54,7 +54,7 @@ Execute script with arguments as follows.
 
 For example:
 ```
-python3 main.py -url "https://storage.googleapis.com/vimeo-test/work-at-vimeo-2.mp4" -threads 10
+python3 main.py -url "https://storage.googleapis.com/vimeo-test/work-at-vimeo-2.mp4" -threads 10 -savename "file_name.mp4"
 ```
 
 ## Verifying the output
